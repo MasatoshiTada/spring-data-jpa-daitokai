@@ -7,8 +7,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.transaction.AfterTransaction;
 import org.springframework.test.context.transaction.BeforeTransaction;
@@ -20,8 +19,7 @@ import java.util.List;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
 
-@ActiveProfiles("test")
-@DataJpaTest
+@SpringBootTest
 @RunWith(SpringRunner.class)
 public class EntityManagerRelationTest {
 
@@ -148,7 +146,7 @@ public class EntityManagerRelationTest {
     public void test_join_fetch_nested() {
         // ここでorder_summaryへのSELECTが発行される（1回、order_detailやproductもJOINされている）
         // os.orderDetailListに対してエイリアスodを指定できる（Hibernateのみ）
-        OrderSummary orderSummary = em.createQuery("SELECT os FROM OrderSummary os JOIN FETCH os.orderDetailList od JOIN FETCH od.product WHERE os.id = :id", OrderSummary.class)
+        OrderSummary orderSummary = em.createQuery("SELECT os FROM OrderSummary os JOIN FETCH os.orderDetailList od JOIN FETCH od.product p WHERE os.id = :id", OrderSummary.class)
                 .setParameter("id", 1)
                 .getSingleResult();
         assertTrue(util.isLoaded(orderSummary, "orderDetailList"));

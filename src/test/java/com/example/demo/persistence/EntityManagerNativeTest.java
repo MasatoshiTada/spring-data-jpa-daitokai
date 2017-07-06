@@ -1,6 +1,6 @@
 package com.example.demo.persistence;
 
-import com.example.demo.dto.ProductDto;
+import com.example.demo.persistence.dto.ProductDto;
 import com.example.demo.persistence.entity.Product;
 import org.junit.After;
 import org.junit.Before;
@@ -8,8 +8,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.transaction.AfterTransaction;
 import org.springframework.test.context.transaction.BeforeTransaction;
@@ -24,8 +23,7 @@ import java.util.List;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-@ActiveProfiles("test")
-@DataJpaTest
+@SpringBootTest
 @RunWith(SpringRunner.class)
 public class EntityManagerNativeTest {
 
@@ -61,7 +59,7 @@ public class EntityManagerNativeTest {
 
     @Test
     public void test_native_sql_entity() {
-        Query query = em.createNativeQuery("select id, name, price, vendor_id, category_id from product where id = :id", Product.class);
+        Query query = em.createNativeQuery("select id, name, price, vendor_id, category_id, created_by, created_date from product where id = :id", Product.class);
         query.setParameter("id", 1);
         Product product = (Product) query.getSingleResult();
         assertThat(product.getId(), is(1));

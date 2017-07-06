@@ -21,7 +21,9 @@ CREATE TABLE product(
   name VARCHAR(128),
   price DECIMAL,
   vendor_id INTEGER REFERENCES vendor(id),
-  category_id INTEGER REFERENCES category(id)
+  category_id INTEGER REFERENCES category(id),
+  created_by VARCHAR(64),
+  created_date TIMESTAMP
 );
 
 CREATE TABLE customer(

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>商品一覧</title>
+    <link rel="stylesheet" href="../static/style.css" th:href="@{/style.css}">
+</head>
+<body>
+<h1>商品一覧</h1>
+<form action="index.html" th:action="@{/}">
+    名キーワード：<input type="text" name="keyword">
+    <input type="submit" value="検索">
+</form>
+<hr>
+<table border="1">
+    <tr>
+        <th>商品ID</th>
+        <th>商品名</th>
+        <th>価格</th>
+        <th>ベンダー名</th>
+        <th>カテゴリー名</th>
+    </tr>
+    <tr th:each="product : ${productList}" th:object="${product}">
+        <td th:text="*{id}">1</td>
+        <td th:text="*{name}">ほげれいぞうこ</td>
+        <td th:text="*{price}">100000</td>
+        <td th:text="*{vendor.name}">ほげ電機</td>
+        <td th:text="*{category.name}">冷蔵庫</td>
+    </tr>
+    <!--/*-->
+    <tr>
+        <td>2</td>
+        <td>ふがれいぞうこ</td>
+        <td>80000</td>
+        <td>ふが電機</td>
+        <td>冷蔵庫</td>
+    </tr>
+    <tr>
+        <td>3</td>
+        <td>ほにゃれいぞうこ</td>
+        <td>120000</td>
+        <td>ほにゃ電機</td>
+        <td>冷蔵庫</td>
+    </tr>
+    <!--*/-->
+</table>
+</body>
+</html>

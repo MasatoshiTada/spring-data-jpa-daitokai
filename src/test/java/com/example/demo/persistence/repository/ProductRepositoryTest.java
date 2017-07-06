@@ -1,22 +1,23 @@
 package com.example.demo.persistence.repository;
 
 import com.example.demo.persistence.entity.Product;
-import org.hibernate.LazyInitializationException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.Persistence;
-import javax.persistence.PersistenceUtil;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.PersistenceException;
+import java.util.List;
 
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
 
-@DataJpaTest
 @SpringBootTest
 @RunWith(SpringRunner.class)
 public class ProductRepositoryTest {
@@ -24,43 +25,11 @@ public class ProductRepositoryTest {
     @Autowired
     ProductRepository productRepository;
 
-    @Test(expected = LazyInitializationException.class)
-    public void findOneで商品が1件LAZYで取得できる() {
-        Product product = productRepository.findOne(1);
-        assertThat(product.getName(), is("パマ冷蔵庫"));
-        PersistenceUtil persistenceUtil = Persistence.getPersistenceUtil();
-        assertThat(persistenceUtil.isLoaded(product, "vendor"), is(false));
-        assertThat(persistenceUtil.isLoaded(product, "category"), is(false));
-        // トランザクション外なので遅延読み込みできない
-        assertThat(product.getVendor().getName(), is("パマソニック"));
-        assertThat(product.getCategory().getName(), is("冷蔵庫"));
-    }
+    @PersistenceContext
+    EntityManager em;
 
     @Test
-    @Transactional
-    public void findOneで商品が1件LAZYで取得できる_Transactional() {
-        Product product = productRepository.findOne(1);
-        assertThat(product.getName(), is("パマ冷蔵庫"));
-        PersistenceUtil persistenceUtil = Persistence.getPersistenceUtil();
-        assertThat(persistenceUtil.isLoaded(product, "vendor"), is(false));
-        assertThat(persistenceUtil.isLoaded(product, "category"), is(false));
-        // トランザクション外なので遅延読み込み可能
-        assertThat(product.getVendor().getName(), is("パマソニック"));
-        assertThat(product.getCategory().getName(), is("冷蔵庫"));
-    }
-
-    @Test
-    public void findOneで商品が1件JOIJNで取得できる() {
-        Product product = productRepository.findByIdJoin(1);
-        assertThat(product.getName(), is("パマ冷蔵庫"));
-        PersistenceUtil persistenceUtil = Persistence.getPersistenceUtil();
-        assertThat(persistenceUtil.isLoaded(product, "vendor"), is(false));
-        assertThat(persistenceUtil.isLoaded(product, "category"), is(false));
-    }
-
-    @Test
-    @Transactional
-    public void findOneで商品が1件EAGERで取得できる() {
+    public void test_findByIdJoinFetch() {
         Product product = productRepository.findByIdJoinFetch(1);
         assertThat(product.getName(), is("パマ冷蔵庫"));
         assertThat(product.getVendor().getName(), is("パマソニック"));
@@ -69,10 +38,63 @@ public class ProductRepositoryTest {
 
     @Test
     @Transactional
-    public void test_update_name() {
+    public void test_updateName() {
         productRepository.updateName("パママ冷蔵庫", 1);
-
         Product product = productRepository.findOne(1);
         assertThat(product.getName(), is("パママ冷蔵庫"));
+    }
+
+    @Test
+    public void test_findByNameContains() {
+        List<Product> productList = productRepository.findByNameContaining("パマ");
+        assertThat(productList.size(), is(4));
+    }
+
+    /**
+     * Spring Data JPAではDataAccessExceptionのサブクラスに変換される
+     */
+    @Test(expected = InvalidDataAccessResourceUsageException.class)
+    public void test_findByIdWithBadGrammar() {
+        Product product = productRepository.findByIdWithBadGrammar(1);
+    }
+
+    /**
+     * Spring Data JPAを使っていないので例外変換されない
+     */
+    @Test(expected = PersistenceException.class)
+    public void test_bad_sql_by_EntityManager() {
+        // わざと間違えたSQL
+        Object obj = em.createNativeQuery("SELECTxxxxx * FROM product p JOIN vendor v ON p.vendor_id = v.id WHERE p.id = :id")
+                .setParameter("id", 1)
+                .getSingleResult();
+    }
+
+    /**
+     * Spring Data JPAではDataAccessExceptionのサブクラスに変換される
+     */
+    @Test(expected = IncorrectResultSizeDataAccessException.class)
+    public void test_find_too_many_result() {
+        Product product = productRepository.find();
+    }
+
+    /**
+     * Spring Data JPAを使っていないので例外変換されない
+     */
+    @Test(expected = PersistenceException.class)
+    public void test_find_too_many_result_by_EntityManager() {
+        Product product = em.createQuery("SELECT p FROM Product p", Product.class)
+                .getSingleResult();
+    }
+
+    @Test
+    public void test_audit() {
+        Product product = new Product("れいぞうこ", 80000L);
+        productRepository.save(product);
+        Object[] objs = (Object[]) em.createNativeQuery("SELECT name, created_by, created_date FROM product p WHERE p.name = :name")
+                .setParameter("name", "れいぞうこ")
+                .getSingleResult();
+        assertThat(objs[0], is("れいぞうこ"));
+        assertThat(objs[1], is("user01"));
+        assertNotNull(objs[2]);
     }
 }

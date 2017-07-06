@@ -6,8 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.transaction.AfterTransaction;
 import org.springframework.test.context.transaction.BeforeTransaction;
@@ -22,8 +21,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-@ActiveProfiles("test")
-@DataJpaTest
+@SpringBootTest
+@Transactional
 @RunWith(SpringRunner.class)
 public class EntityManagerCrudTest {
 
@@ -64,7 +63,6 @@ public class EntityManagerCrudTest {
         assertTrue(em.contains(product)); // MANAGED状態ならtrue
     }
 
-    @Transactional // テストメソッド実行後にロールバック
     @Test
     public void test_persist() {
         em.getTransaction().begin();
@@ -79,7 +77,6 @@ public class EntityManagerCrudTest {
         assertThat(productFromDb.getPrice(), is(100000L));
     }
 
-    @Transactional // テストメソッド実行後にロールバック
     @Test
     public void test_update() {
         em.getTransaction().begin();
@@ -93,7 +90,6 @@ public class EntityManagerCrudTest {
         em.getTransaction().rollback();
     }
 
-    @Transactional // テストメソッド実行後にロールバック
     @Test
     public void test_update_by_merge() {
         em.getTransaction().begin();
@@ -111,7 +107,23 @@ public class EntityManagerCrudTest {
         em.getTransaction().rollback();
     }
 
-    @Transactional // テストメソッド実行後にロールバック
+    @Test
+    public void test_insert_by_merge() {
+        em.getTransaction().begin();
+        Product product = new Product();
+        product.setId(999);
+        product.setName("更新後の名前");
+        Product mergedProduct = em.merge(product);
+        em.flush();
+        String productName = (String) em.createNativeQuery("SELECT name FROM product WHERE id = :id")
+                .setParameter("id", 101) // 自動採番されたIDになる
+                .getSingleResult();
+        assertThat(productName, is("更新後の名前"));
+        assertTrue(em.contains(mergedProduct));
+        assertFalse(em.contains(product));
+        em.getTransaction().rollback();
+    }
+
     @Test
     public void test_remove() {
         em.getTransaction().begin();
@@ -125,7 +137,6 @@ public class EntityManagerCrudTest {
         em.getTransaction().rollback();
     }
 
-    @Transactional // テストメソッド実行後にロールバック
     @Test
     public void test_remove_cancel_by_rollback() {
         em.getTransaction().begin();
@@ -139,7 +150,6 @@ public class EntityManagerCrudTest {
         assertThat(count, is(BigInteger.ONE));
     }
 
-    @Transactional // テストメソッド実行後にロールバック
     @Test
     public void test_remove_cancel_by_detach() {
         em.getTransaction().begin();
@@ -154,7 +164,6 @@ public class EntityManagerCrudTest {
         em.getTransaction().rollback();
     }
 
-    @Transactional // テストメソッド実行後にロールバック
     @Test
     public void test_remove_cancel_by_clear() {
         em.getTransaction().begin();

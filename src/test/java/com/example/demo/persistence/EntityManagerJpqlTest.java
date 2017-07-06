@@ -1,14 +1,13 @@
 package com.example.demo.persistence;
 
-import com.example.demo.dto.CountDto;
+import com.example.demo.persistence.dto.CountDto;
 import com.example.demo.persistence.entity.Product;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.transaction.AfterTransaction;
 import org.springframework.test.context.transaction.BeforeTransaction;
@@ -21,8 +20,7 @@ import java.util.List;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-@ActiveProfiles("test")
-@DataJpaTest
+@SpringBootTest
 @RunWith(SpringRunner.class)
 public class EntityManagerJpqlTest {
 
@@ -74,7 +72,7 @@ public class EntityManagerJpqlTest {
 
     @Test
     public void test_jpq_constructor_expression () {
-        TypedQuery<CountDto> query = em.createQuery("SELECT new com.example.demo.dto.CountDto(od.product.id, COUNT(od)) FROM OrderDetail od GROUP BY od.product.id", CountDto.class);
+        TypedQuery<CountDto> query = em.createQuery("SELECT new com.example.demo.persistence.dto.CountDto(od.product.id, COUNT(od)) FROM OrderDetail od GROUP BY od.product.id", CountDto.class);
         List<CountDto> countDtoList = query.getResultList();
         assertThat(countDtoList.size(), is(3));
         for (CountDto countDto : countDtoList) {
