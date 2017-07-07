@@ -42,6 +42,8 @@ public class ProductRepositoryTest {
         productRepository.updateName("パママ冷蔵庫", 1);
         Product product = productRepository.findOne(1);
         assertThat(product.getName(), is("パママ冷蔵庫"));
+        assertThat(product.getCreatedBy(), is("user01"));
+        assertNotNull(product.getCreatedDate());
     }
 
     @Test
