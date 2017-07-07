@@ -113,32 +113,63 @@ public class EntityManagerRelationTest {
     public void test_join() {
         // ここでorder_summaryへのSELECTが発行される（1回）
         // order_summaryとorder_detailがJOINされてはいるが、order_detailの列は一切読み込まれない
-        OrderSummary orderSummary = em.createQuery("SELECT os FROM OrderSummary os JOIN os.orderDetailList WHERE os.id = :id", OrderSummary.class)
-                .setParameter("id", 1)
-                .getSingleResult();
-        assertFalse(util.isLoaded(orderSummary, "orderDetailList")); // まだorderDetailListは読み込まれていない = JOINではN+1問題は解決しない
-        System.out.println(orderSummary);
-        List<OrderDetail> orderDetailList = orderSummary.getOrderDetailList();
-        for (OrderDetail orderDetail : orderDetailList) {
-            // ここでorder_detailへのSELECTが発行される（1回）
-            System.out.println(orderDetail);
+        List<OrderSummary> orderSummaryList = em.createQuery("SELECT os FROM OrderSummary os LEFT JOIN os.orderDetailList", OrderSummary.class)
+                .getResultList();
+        assertThat(orderSummaryList.size(), is(14));
+        for (OrderSummary orderSummary : orderSummaryList) {
+//            assertTrue(util.isLoaded(orderSummary, "orderDetailList")); // まだorderDetailListは読み込まれていない = JOINではN+1問題は解決しない
+            System.out.println(orderSummary);
+            List<OrderDetail> orderDetailList = orderSummary.getOrderDetailList();
+            for (OrderDetail orderDetail : orderDetailList) {
+                // ここでorder_detailへのSELECTが発行される（N回）
+                System.out.println(orderDetail);
+            }
+            assertTrue(util.isLoaded(orderSummary, "orderDetailList")); // まだorderDetailListは読み込まれていない
         }
-        assertTrue(util.isLoaded(orderSummary, "orderDetailList")); // まだorderDetailListは読み込まれていない
     }
 
+    /**
+     * order_summaryのIDが1,2のものはorder_detailが3件ずつある（＝計6件）。
+     * order_detailを持たないorder_summaryが残り8件あるので、
+     * 検索結果のリストのサイズは合計で6 + 8 = 14件になる。
+     * (コンソール出力参照)
+     */
     @Test
     public void test_join_fetch() {
         // ここでorder_summaryへのSELECTが発行される（1回）
-        OrderSummary orderSummary = em.createQuery("SELECT os FROM OrderSummary os JOIN FETCH os.orderDetailList WHERE os.id = :id", OrderSummary.class)
-                .setParameter("id", 1)
-                .getSingleResult();
-        assertTrue(util.isLoaded(orderSummary, "orderDetailList")); // orderDetailListは読み込み済み = N+1問題が解決した！
-        System.out.println(orderSummary);
-        List<OrderDetail> orderDetailList = orderSummary.getOrderDetailList();
-        for (OrderDetail orderDetail : orderDetailList) {
-            // ここではSELECTは発行されない
-            System.out.println(orderDetail);
-            assertFalse(util.isLoaded(orderDetail, "product")); // productは読み込まれていない
+        List<OrderSummary> orderSummaryList = em.createQuery("SELECT os FROM OrderSummary os LEFT JOIN FETCH os.orderDetailList", OrderSummary.class)
+                .getResultList();
+        assertThat(orderSummaryList.size(), is(14));
+        for (OrderSummary orderSummary : orderSummaryList) {
+            assertTrue(util.isLoaded(orderSummary, "orderDetailList")); // orderDetailListは読み込み済み = N+1問題が解決した！
+            System.out.println(orderSummary);
+            List<OrderDetail> orderDetailList = orderSummary.getOrderDetailList();
+            for (OrderDetail orderDetail : orderDetailList) {
+                // ここではSELECTは発行されない
+                System.out.println(orderDetail);
+                assertFalse(util.isLoaded(orderDetail, "product")); // productは読み込まれていない
+            }
+        }
+    }
+
+    /**
+     * DISTINCTキーワードを付けると、OrderSummaryに対する重複が無くなる。
+     */
+    @Test
+    public void test_join_fetch_distinct() {
+        // ここでorder_summaryへのSELECTが発行される（1回）
+        List<OrderSummary> orderSummaryList = em.createQuery("SELECT DISTINCT os FROM OrderSummary os LEFT JOIN FETCH os.orderDetailList", OrderSummary.class)
+                .getResultList();
+        assertThat(orderSummaryList.size(), is(10));
+        for (OrderSummary orderSummary : orderSummaryList) {
+            assertTrue(util.isLoaded(orderSummary, "orderDetailList")); // orderDetailListは読み込み済み = N+1問題が解決した！
+            System.out.println(orderSummary);
+            List<OrderDetail> orderDetailList = orderSummary.getOrderDetailList();
+            for (OrderDetail orderDetail : orderDetailList) {
+                // ここではSELECTは発行されない
+                System.out.println(orderDetail);
+                assertFalse(util.isLoaded(orderDetail, "product")); // productは読み込まれていない
+            }
         }
     }
 
