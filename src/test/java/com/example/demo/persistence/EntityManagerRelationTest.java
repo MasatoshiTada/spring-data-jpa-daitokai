@@ -117,7 +117,8 @@ public class EntityManagerRelationTest {
                 .getResultList();
         assertThat(orderSummaryList.size(), is(14));
         for (OrderSummary orderSummary : orderSummaryList) {
-//            assertTrue(util.isLoaded(orderSummary, "orderDetailList")); // まだorderDetailListは読み込まれていない = JOINではN+1問題は解決しない
+            boolean loaded = util.isLoaded(orderSummary, "orderDetailList");// まだorderDetailListは読み込まれていない = JOINではN+1問題は解決しない
+            System.out.println("loaded = " + loaded); // 同じidのOrderSummaryがListに含まれているので、2回目以降はtrueになる
             System.out.println(orderSummary);
             List<OrderDetail> orderDetailList = orderSummary.getOrderDetailList();
             for (OrderDetail orderDetail : orderDetailList) {

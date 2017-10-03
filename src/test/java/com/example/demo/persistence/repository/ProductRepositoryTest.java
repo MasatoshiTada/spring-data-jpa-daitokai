@@ -42,8 +42,11 @@ public class ProductRepositoryTest {
         productRepository.updateName("パママ冷蔵庫", 1);
         Product product = productRepository.findOne(1);
         assertThat(product.getName(), is("パママ冷蔵庫"));
-        assertThat(product.getCreatedBy(), is("user01"));
+        assertThat(product.getCreatedBy(), is("user00"));
         assertNotNull(product.getCreatedDate());
+        // JPQLでUPDATEした場合はEntityListenerが動かないため更新者・更新日時は保存されない
+        assertNull(product.getUpdatedBy());
+        assertNull(product.getUpdatedDate());
     }
 
     @Test
@@ -89,7 +92,8 @@ public class ProductRepositoryTest {
     }
 
     @Test
-    public void test_audit() {
+    @Transactional
+    public void test_audit_insert() {
         Product product = new Product("れいぞうこ", 80000L);
         productRepository.save(product);
         Object[] objs = (Object[]) em.createNativeQuery("SELECT name, created_by, created_date FROM product p WHERE p.name = :name")
@@ -98,5 +102,21 @@ public class ProductRepositoryTest {
         assertThat(objs[0], is("れいぞうこ"));
         assertThat(objs[1], is("user01"));
         assertNotNull(objs[2]);
+    }
+
+    @Test
+    @Transactional
+    public void test_audit_update() {
+        Product product = productRepository.getOne(1);
+        product.setName("れいぞうこ");
+        productRepository.save(product);
+        Object[] objs = (Object[]) em.createNativeQuery("SELECT name, created_by, created_date, updated_by, updated_date FROM product p WHERE p.id = :id")
+                .setParameter("id", 1)
+                .getSingleResult();
+        assertThat(objs[0], is("れいぞうこ"));
+        assertThat(objs[1], is("user00"));
+        assertNotNull(objs[2]);
+        assertThat(objs[3], is("user01"));
+        assertNotNull(objs[4]);
     }
 }
