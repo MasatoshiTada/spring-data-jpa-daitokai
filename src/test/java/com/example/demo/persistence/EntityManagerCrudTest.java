@@ -16,10 +16,8 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import java.math.BigInteger;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.*;
 
 @SpringBootTest
 @Transactional
@@ -87,6 +85,8 @@ public class EntityManagerCrudTest {
                 .setParameter("id", 1)
                 .getSingleResult();
         assertThat(productName, is("更新後の名前"));
+        assertThat(product.getUpdatedBy(), is("user01"));
+        assertNotNull(product.getUpdatedDate());
         em.getTransaction().rollback();
     }
 

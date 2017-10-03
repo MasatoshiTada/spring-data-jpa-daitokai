@@ -23,7 +23,9 @@ CREATE TABLE product(
   vendor_id INTEGER REFERENCES vendor(id),
   category_id INTEGER REFERENCES category(id),
   created_by VARCHAR(64),
-  created_date TIMESTAMP
+  created_date TIMESTAMP,
+  updated_by VARCHAR(64),
+  updated_date TIMESTAMP
 );
 
 CREATE TABLE customer(

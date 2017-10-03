@@ -3,6 +3,8 @@ package com.example.demo.persistence.audit;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+
 /**
  * @see https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#auditing
  */
@@ -10,8 +12,8 @@ import org.springframework.stereotype.Component;
 public class MyAuditorAware implements AuditorAware<String> {
 
     @Override
-    public String getCurrentAuditor() {
+    public Optional<String> getCurrentAuditor() {
         // 仮のユーザー名を返す
-        return "user01";
+        return Optional.of("user01");
     }
 }

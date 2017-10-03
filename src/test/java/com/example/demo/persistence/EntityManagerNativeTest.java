@@ -59,7 +59,7 @@ public class EntityManagerNativeTest {
 
     @Test
     public void test_native_sql_entity() {
-        Query query = em.createNativeQuery("select id, name, price, vendor_id, category_id, created_by, created_date from product where id = :id", Product.class);
+        Query query = em.createNativeQuery("select id, name, price, vendor_id, category_id, created_by, created_date, updated_by, updated_date from product where id = :id", Product.class);
         query.setParameter("id", 1);
         Product product = (Product) query.getSingleResult();
         assertThat(product.getId(), is(1));
